@@ -1,2 +1,2 @@
-# project1
+# Project1
 Spam Detection Project
