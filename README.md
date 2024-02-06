@@ -9,7 +9,7 @@ There are 57 input variables which are described below. <br>
 - 6 quantitative predictors measuring the percentage of specific characters/symbols found in the e–mail. These are charSemicolon, charRoundbracket, charSquarebracket, charExclamation, charDollar and charHash. <br>
 - Average length of uninterrupted sequences of capital letters [capitalAve]. Length of the longest uninterrupted sequence of capital letters [capitalLong]. Sum of the length of uninterrupted sequences of capital letters [CapitaTotal]. <br>
 
-
+<br>
 (Links here!)
 - Problem Description: [https://github.com/sparksomip/project1/blob/main/Problem-Details.pdf]
 - Train Data Set: [https://github.com/sparksomip/project1/blob/main/train.csv]
