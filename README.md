@@ -1,6 +1,7 @@
 # Project 1
 <h3>Spam Detection Project</h3>
-<h4>📖 Field: Machine Learning using R, Classification of spam using predictors measuring the percentage of words whether they are spam or not</h4>
+<h4>📁 Field: Machine Learning using R</h4>
+<h4>📖 Topic: Classification of spam using predictors measuring the percentage of words whether they are spam or not</h4>
 <h4>⚡Key words: Machine Learning, Classification</h4>
 
 The dataset consists of information from 4601 e–mail messages, in a study to screen e–mail for spam. For 3101 of these e–mails you known whether they are spam [response = 2] or non–spam [response = 1], and you have additional input variables describing several features of each e–mail. For the other 1500 e–mails, you have only information on the inputs. Your goal is to construct a classifier which has good performance in labeling the remaining 1500 e–mails as spam or non–spam. Note that in classifying as spam an e–mail which is actually non–spam you pay a cost of 5. Classifying as non–spam e–mails which are actually spam is less dangerous and hence you pay a cost of 1.
