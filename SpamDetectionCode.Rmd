@@ -1,0 +1,416 @@
+
+## Logistic Regression
+### Try 1
+
+```{r}
+library(ISLR2)
+```
+
+```{r}
+train <- read.csv("~/R/Machine Learning/Data Challenge 1/train.csv")
+test <- read.csv("~/R/Machine Learning/Data Challenge 1/test.csv")
+```
+
+```{r}
+cor(train)
+options(max.print=999999)
+```
+
+```{r}
+train[train$response == "1", 1] <- 0 ## HAM
+train[train$response == "2", 1] <- 1 ## SPAM
+```
+
+## Choosing linear models with using Cp, BIC, Rsq
+
+```{r}
+library(leaps)
+```
+
+```{r}
+regfit.full <- regsubsets(response~., train, really.big=T, nvmax=10)
+reg.summary <- summary(regfit.full)
+reg.summary
+## "*" means that it is included in that model
+## regsubsets reports only upto best 8 variable models
+```
+
+```{r}
+reg.summary$rsq
+reg.summary$adjr2
+reg.summary$cp
+reg.summary$bic
+reg.summary$rss
+
+which.min(reg.summary$rsq) # 1
+which.max(reg.summary$adjr2) # 10
+which.min(reg.summary$cp) # 10
+which.min(reg.summary$bic) # 10
+which.min(reg.summary$rss) # 10
+```
+
+For scale r2, adjr, Cp, bic: our, remove, free, your, num000, hp, charExclamation, capitalLong
+
+```{r}
+plot(regfit.full, scale="r2",)
+plot(regfit.full, scale="adjr2")
+plot(regfit.full, scale="Cp")
+plot(regfit.full, scale="bic")
+```
+
+```{r}
+regfit.fwd <- regsubsets(response~., data=train, nvmax=57, method="forward")
+summary(regfit.fwd)
+regfit.bwd <- regsubsets(response~., data=train, nvmax=57, method="backward")
+summary(regfit.bwd)
+```
+
+```{r}
+plot(regfit.fwd, scale="r2",)
+plot(regfit.fwd, scale="adjr2")
+plot(regfit.fwd, scale="Cp")
+plot(regfit.fwd, scale="bic")
+```
+
+```{r}
+plot(regfit.bwd, scale="r2",)
+plot(regfit.bwd, scale="adjr2")
+plot(regfit.bwd, scale="Cp")
+plot(regfit.bwd, scale="bic")
+```
+
+```{r}
+coef(regfit.full,5)
+coef(regfit.fwd, 5)
+coef(regfit.bwd, 5)
+
+## Best one-variable to six-variables are same for all best subset, forward, and backward
+coef(regfit.full,6)
+coef(regfit.fwd, 6)
+coef(regfit.bwd, 6)
+## Best seven-variable is different for all best subset, forward, and backward
+coef(regfit.full,7)
+coef(regfit.fwd, 7)
+coef(regfit.bwd, 7)
+```
+
+## Validation-set approach
+
+```{r}
+set.seed(1)
+train1 <- sample(c(TRUE,FALSE), nrow(train), replace=TRUE)
+test1 <- (!train1)
+```
+
+
+```{r}
+regfit.best <- regsubsets(response ~., data=train[train1,], nvmax=8, really.big=T)
+```
+
+```{r}
+test.mat <- model.matrix(response~., data=train[test1,], nvmax=8)
+```
+
+```{r}
+val.errors <- rep(NA, 8)
+for (i in 1:8) {
+  coefi <- coef(regfit.best, id=i)
+  pred <- test.mat[,names(coefi)]%*% coefi
+  val.errors[i] <- mean((train$response[test1]-pred)^2)
+}
+val.errors
+which.min(val.errors) ## 7
+coef(regfit.best,8)
+```
+
+
+```{r}
+predict.regsubsets <- function(object, newdata, id, ...) {
+  form <- as.formula(object$call[[2]])
+  mat <- model.matrix(form, newdata)
+  coefi <- coef(object, id=id)
+  xvars <- names(coefi)
+  mat[, xvars] %*% coefi
+}
+```
+
+## Cross-validation approach
+
+```{r}
+k <- 10
+n <- nrow(train)
+set.seed(1)
+folds <- sample(rep(1:k, length =n))
+cv.errors <- matrix(NA, k, 20, dimnames=list(NULL, paste(1:20)))
+```
+
+```{r}
+for (j in 1:k) {
+  best.fit <- regsubsets(response~., data=train[folds != j, ], nvmax=20, really.big=T)
+  for (i in 1:20) {
+    pred <- predict(best.fit, train[folds==j,], id=i)
+    cv.errors[j,i] <- mean((train$response[folds==j] - pred)^2)
+  }
+}
+```
+
+```{r}
+mean.cv.errors <- apply(cv.errors, 2, mean)
+mean.cv.errors
+
+par(mfrow=c(1,1))
+plot(mean.cv.errors, type="b")
+```
+
+
+```{r}
+glm.fit <- glm(response~., data=train, family=binomial) ## family=binomial for logistic regression
+summary(glm.fit)
+```
+
+```{r}
+glm.probs <- predict(glm.fit, type="response")
+glm.probs[1:10]
+```
+
+```{r}
+glm.pred <- rep("0", 3101) ## Creates vector of 3101 non-spams
+glm.pred[glm.probs >.5]=1
+```
+
+```{r}
+table(glm.pred, train$response)
+(1804+1090)/3101 ## 0.93
+mean(glm.pred== train$response) ## 0.93
+```
+
+## Test data
+```{r}
+glm.probs2 <- predict(glm.fit, test, type="response")
+glm.pred2 <- rep("0",1500)
+glm.pred2[glm.probs2 > .5] <-1
+
+glm.pred2[glm.pred2=="1"] <- "2"
+glm.pred2[glm.pred2=="0"] <- "1"
+
+write.table(glm.pred2,file="response_lr.txt", row.names=FALSE, col.names=FALSE)
+```
+
+### Try 2
+
+```{r}
+train <- read.csv("~/R/Machine Learning/Data Challenge 1/train.csv")
+test <- read.csv("~/R/Machine Learning/Data Challenge 1/test.csv")
+train[train$response == "1", 1] <- 0 ## HAM
+train[train$response == "2", 1] <- 1 ## SPAM
+```
+
+```{r}
+glm.fit2 <- glm(response ~ address+our+over+remove+internet+order+will+free+business+you+your+num000+hp+george+num650+data+num85+technology+pm+cs+meeting+project+re+edu+conference+charSemicolon, charExclamation+charDollar+capitalLong+capitalTotal, data=train, family=binomial)
+summary(glm.fit2)
+glm.prob2 <- predict(glm.fit2, train, type="response")
+```
+
+```{r}
+glm.pred2 <- rep("0",3101)
+glm.pred2[glm.prob2 > .8] <- 1
+```
+
+```{r}
+table(glm.pred2, train$response)
+(1452+1170)/3101 ## 0.85 0.5
+(434*5)+(45*1) ## 2215
+
+(1671+1086)/3101 ## 0.88 0.7
+(215*5)+(129*1) ## 1204
+
+(1735+1037)/3101 ## 0.893 0.75
+(151*5)+(178*1) ## 933
+
+(1766+1017)/3101 ## 0.90 0.8
+(120*5)+(198*1) ## 798
+
+(1791+967)/3101 ## 0.89 0.85
+(95*5)+(248*1) ## 723
+
+(1813+908)/3101 ## 0.88 0.9
+(73*5)+(307*1) ## 672
+mean(glm.pred2== train$response) ## 0.93
+```
+
+## Test data
+```{r}
+glm.probs2 <- predict(glm.fit2, test, type="response")
+glm.pred3 <- rep("0",1500)
+glm.pred3[glm.probs2 > .8] <-1
+
+glm.pred2[glm.pred2=="1"] <- "2"
+glm.pred2[glm.pred2=="0"] <- "1"
+
+write.table(glm.pred2,file="response_lr2.txt", row.names=FALSE, col.names=FALSE)
+```
+
+## Linear Discriminant Analysis
+```{r}
+library(MASS)
+train <- read.csv("~/R/Machine Learning/Data Challenge 1/train.csv")
+test <- read.csv("~/R/Machine Learning/Data Challenge 1/test.csv")
+lda.fit <- lda(response ~ address+our+over+remove+internet+order+will+free+business+you+your+num000+hp+george+num650+data+num85+technology+pm+cs+meeting+project+re+edu+conference+charSemicolon+charExclamation+charDollar+capitalLong+capitalTotal, data=train)
+lda.fit
+```
+
+```{r}
+plot(lda.fit)
+```
+
+```{r}
+lda.pred <- predict(lda.fit, train)
+names(lda.pred)
+## class contains LDA's predictions about the movement of the market
+## posterior is a matrix whose kth column contains the posterior probability that the corresponding observation belongs to the kth class
+## x contains the linear discriminants
+lda.pred
+```
+
+```{r}
+lda.class <- lda.pred$class
+table(lda.class, train$response)
+mean(lda.class == train$response) ## 0.88
+(1802+929)/3101 ## 0.88
+(84*5)+(286*1) ## 706
+```
+
+```{r}
+lda.pred$posterior
+sum(lda.pred$posterior[, 1]>= .9)
+sum(lda.pred$posterior[, 1]< .9)
+```
+
+```{r}
+lda.pred$posterior[, 1]
+```
+
+## Test data
+```{r}
+lda.pred2 <- predict(lda.fit, test)
+lda.pred2$class
+write.table(lda.pred2$class,file="response_lda.txt", row.names=FALSE, col.names=FALSE)
+```
+
+## Quadratic Discriminant Analysis
+```{r}
+train <- read.csv("~/R/Machine Learning/Data Challenge 1/train.csv")
+test <- read.csv("~/R/Machine Learning/Data Challenge 1/test.csv")
+qda.fit <- qda(response ~ address+our+over+remove+internet+order+will+free+business+you+your+num000+hp+george+num650+data+num85+technology+pm+cs+meeting+project+re+edu+conference+charSemicolon+charExclamation+charDollar+capitalLong+capitalTotal, data=train)
+qda.fit
+## No coefficients because it's a quadratic instead of linear.
+```
+
+```{r}
+qda.class <- predict(qda.fit, train)$class
+table(qda.class, train$response)
+mean(qda.class==train$response) ## 0.81
+```
+
+## Test data
+```{r}
+qda.pred <- predict(qda.fit, test)
+qda.pred$class
+write.table(qda.pred$class,file="response_qda.txt", row.names=FALSE, col.names=FALSE)
+```
+
+## Naive Bayes
+```{r}
+library(e1071)
+train <- read.csv("~/R/Machine Learning/Data Challenge 1/train.csv")
+test <- read.csv("~/R/Machine Learning/Data Challenge 1/test.csv")
+nb.fit <- naiveBayes(response ~ address+our+over+remove+internet+order+will+free+business+you+your+num000+hp+george+num650+data+num85+technology+pm+cs+meeting+project+re+edu+conference+charSemicolon+charExclamation+charDollar+capitalLong+capitalTotal, data=train)
+nb.fit
+```
+
+```{r}
+nb.class <- predict(nb.fit, train)
+table(nb.class, train$response)
+mean(nb.class==train$response) ## 70
+```
+
+## K-Nearest Neighbors
+```{r}
+library(class)
+train <- read.csv("~/R/Machine Learning/Data Challenge 1/train.csv")
+test <- read.csv("~/R/Machine Learning/Data Challenge 1/test.csv")
+
+train.X <- train[, -1]
+set.seed(1)
+knn.pred <- knn(train.X, test, cl=train$response, k=3)
+knn.pred
+
+write.table(knn.pred,file="response_knn_k3.txt", row.names=FALSE, col.names=FALSE)
+```
+
+```{r}
+knn.pred2 <- knn(train.X, test.X, train.Direction, k=3)
+table(knn.pred2, Direction.2005)
+mean(knn.pred2==Direction.2005) ## 0.54
+```
+
+## Another example with KNN
+```{r}
+dim(Caravan)
+attach(Caravan)
+summary(Purchase)
+348/5822 ## 0.06
+```
+
+```{r}
+## Age and salary for example has a different scale and it will drive the KNN classification result. To handle this, we standardize the data so all the variables are given a mean of zero and standard deviation of one. *with scale() function.
+standardized.X <- scale(Caravan[, -86])
+var(Caravan[, 1])
+var(Caravan[, 2])
+var(standardized.X[, 1])
+var(standardized.X[, 2])
+var(standardized.X[, 3])
+```
+
+```{r}
+test <- 1:1000
+train.X <- standardized.X[-test,]
+test.X <- standardized.X[test, ]
+train.Y <- Purchase[-test]
+test.Y <- Purchase[test]
+set.seed(1)
+knn.predCar <- knn(train.X, test.X, train.Y, k=1)
+mean(test.Y != knn.predCar) ## 0.118
+mean(test.Y != "No") ## 0.059
+```
+
+```{r}
+table(knn.predCar, test.Y)
+9/(68+9) ## 0.117
+```
+
+```{r}
+## k=3
+knn.predCark3 <- knn(train.X, test.X, train.Y, k=3)
+table(knn.predCark3, test.Y)
+5/(21+5) ## 0.192
+
+## k=5
+knn.predCark5 <- knn(train.X, test.X, train.Y, k=5)
+table(knn.predCark5, test.Y)
+4/(11+4) ## 0.267
+```
+
+## Applying logistic regression to this problem
+```{r}
+glm.fitsCar <- glm(Purchase ~., data=Caravan, family=binomial, subset=-test)
+glm.probsCar <- predict(glm.fits, Caravan[test, ], type="response")
+glm.predCar <- rep("No",1000)
+glm.predCar[glm.probsCar >.5] <- "Yes"
+table(glm.predCar, test.Y)
+0/(7+0) ## 0
+
+glm.predCar[glm.probsCar >.25] <- "Yes"
+table(glm.predCar, test.Y)
+11/(22+11) ## 0.33
+```
