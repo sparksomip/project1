@@ -10,7 +10,7 @@ There are 57 input variables which are described below. <br>
 - Average length of uninterrupted sequences of capital letters [capitalAve]. Length of the longest uninterrupted sequence of capital letters [capitalLong]. Sum of the length of uninterrupted sequences of capital letters [CapitaTotal]. <br>
 <br>
 <h4>(Links here!)</h4>
-<h4>- 📝 **FINAL CODE:** [https://github.com/sparksomip/project1/blob/main/SpamDetectionCode.Rmd]</h4>
+<h4> 📝 **FINAL CODE:** [https://github.com/sparksomip/project1/blob/main/SpamDetectionCode.Rmd]</h4>
 
 - Problem Description: [https://github.com/sparksomip/project1/blob/main/Problem-Details.pdf]<br>
 - Train Data Set: [https://github.com/sparksomip/project1/blob/main/train.csv]<br>
